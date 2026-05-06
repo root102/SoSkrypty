@@ -5,7 +5,6 @@ WWW="$LOGDIR/cdlinux.www.log"
 ARCH=~/SoSkrypty/cdlinux.tgz
 TMP="/tmp/menu_cdlinux_$$"
 TITLE="Analizator logow CDLinux"
-
 cleanup(){ rm -f "$TMP"; }
 trap cleanup EXIT
 
@@ -17,7 +16,6 @@ init(){
         dialog --title "Blad" --msgbox "Nie mozna rozpakowac:\n$ARCH" 7 50; exit 1
     }
 }
-
 stat_ftp(){
     { printf "Lacznie wpisow:      %d\n" "$(wc -l < "$FTP")"
       printf "Udane pobierania:    %d\n" "$(grep -c ' OK DOWNLOAD' "$FTP")"
@@ -31,7 +29,6 @@ stat_ftp(){
     } > "$TMP"
     dialog --title "FTP - Statystyki" --textbox "$TMP" 28 72
 }
-
 stat_www(){
     { printf "Lacznie zadan:   %d\n" "$(wc -l < "$WWW")"
       printf "Odpowiedzi 200:  %d\n" "$(grep -c '" 200 ' "$WWW")"
@@ -46,7 +43,6 @@ stat_www(){
     } > "$TMP"
     dialog --title "WWW - Statystyki" --textbox "$TMP" 28 72
 }
-
 szukaj_ip(){
     local ip
     ip=$(dialog --title "Szukaj IP" --inputbox "Podaj adres IP klienta:" 8 50 3>&1 1>&2 2>&3)

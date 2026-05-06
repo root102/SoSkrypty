@@ -2,7 +2,6 @@
 KATALOG="/tmp/cdlinux"
 ARCH=~/SoSkrypty/cdlinux.tgz
 NAZWA=""; ROZMIAR=""; TYP=""; DNI=""; EXT=""; VERBOSE=0; EXEC_CMD=""
-
 usage(){
     cat <<HELP
 Uzycie: $(basename $0) [OPCJE]
@@ -19,14 +18,12 @@ Wyszukiwarka plikow z filtrowaniem i statystykami (na bazie cdlinux).
 HELP
     exit 0
 }
-
 init(){
     [ -d "$KATALOG" ] && return
     echo "Rozpakowywanie $ARCH do $KATALOG..."
     mkdir -p "$KATALOG"
     tar -xzf "$ARCH" -C "$KATALOG" 2>/dev/null || { echo "Blad: brak $ARCH"; exit 1; }
 }
-
 buduj_cmd(){
     local cmd="find \"$KATALOG\""
     [ -n "$TYP" ]     && cmd="$cmd -type $TYP"
@@ -36,7 +33,6 @@ buduj_cmd(){
     [ -n "$DNI" ]     && cmd="$cmd -mtime -$DNI"
     echo "$cmd"
 }
-
 wyswietl(){
     local w="$1"
     local liczba; liczba=$(echo "$w" | grep -c .)
@@ -52,9 +48,7 @@ wyswietl(){
     echo "----------------------------------------------------"
     echo "Laczny rozmiar: $(echo "$w" | xargs -d'\n' du -shc 2>/dev/null | tail -1 | cut -f1)"
 }
-
 statystyki(){
-    echo ""
     echo "=== Statystyki ==="
     echo "Pliki wg rozszerzenia:"
     echo "$1" | grep -oE '\.[^./]+$' | sort | uniq -c | sort -rn | head -10 \
@@ -63,7 +57,6 @@ statystyki(){
     echo "$1" | sed 's|/[^/]*$||' | sort | uniq -c | sort -rn | head -10 \
         | awk '{printf "  %5d  %s\n",$1,$2}'
 }
-
 while getopts "d:n:e:s:t:m:x:vh" o; do
     case $o in
         d) KATALOG="$OPTARG" ;; n) NAZWA="$OPTARG"    ;; e) EXT="$OPTARG"      ;;
@@ -71,11 +64,10 @@ while getopts "d:n:e:s:t:m:x:vh" o; do
         x) EXEC_CMD="$OPTARG";; v) VERBOSE=1           ;; h) usage              ;;
     esac
 done
-
 init
 WYNIKI=$(eval "$(buduj_cmd)" 2>/dev/null)
 [ -z "$WYNIKI" ] && echo "Brak wynikow dla podanych kryteriow." && exit 0
 wyswietl "$WYNIKI"
 statystyki "$WYNIKI"
-[ -n "$EXEC_CMD" ] && echo "" && echo "=== Wykonywanie: $EXEC_CMD ===" \
+[ -n "$EXEC_CMD" ] && echo "=== Wykonywanie: $EXEC_CMD ===" \
     && echo "$WYNIKI" | xargs -d'\n' $EXEC_CMD 2>/dev/null
