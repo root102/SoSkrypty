@@ -40,7 +40,7 @@ ftp_stat(){
         | sort | uniq -c | sort -rn | head -"$N" | awk '{printf "  %5d  %s\n",$1,$2}'
 }
 www_stat(){
-    local d; d=$(cat "$WWW")
+    local d; d=$(cat "$WWW" | sed 's/^[^:]*://')
     [ -n "$IP" ] && d=$(echo "$d" | grep "^$IP ")
     [ -n "$ST" ] && d=$(echo "$d" | grep "\" $ST ")
     linia; echo " ANALIZA WWW"; linia
