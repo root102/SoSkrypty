@@ -1,0 +1,20 @@
+## Plik konfiguracyjny skryptu backuper.sh
+## Filip Zdrojewski
+
+# Katalogi do backupu (oddzielone spacją)
+BACKUP_DIRS="/home/$USER/dokumenty /home/$USER/projekty"
+
+# Serwer zdalny (user@host)
+REMOTE_HOST="backup@192.168.1.100"
+
+# Katalog na serwerze zdalnym
+REMOTE_DIR="/backups/filip"
+
+# Ile ostatnich kopii przechowywac
+KEEP_LAST=7
+
+# Plik z haslem GPG (jeden wiersz, samo haslo)
+GPG_PASS_FILE="$HOME/.backup_pass"
+
+# Plik logu operacji
+LOG_FILE="$HOME/.backuper.log"

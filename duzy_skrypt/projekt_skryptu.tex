@@ -1,0 +1,149 @@
+\documentclass[a4paper,12pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[a4paper, top=2cm, bottom=2cm, left=2.5cm, right=2.5cm]{geometry}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{enumitem}
+\usepackage{parskip}
+\usepackage{titlesec}
+
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{4pt}
+
+\titleformat{\section}{\large\bfseries}{}{0em}{}[\vspace{-4pt}\rule{\linewidth}{0.5pt}\vspace{2pt}]
+\titleformat{\subsection}{\normalsize\bfseries}{}{0em}{}
+\titlespacing{\section}{0pt}{10pt}{4pt}
+\titlespacing{\subsection}{0pt}{6pt}{2pt}
+
+\lstset{
+  basicstyle=\ttfamily\small,
+  backgroundcolor=\color{gray!10},
+  frame=single,
+  breaklines=true,
+  columns=fullflexible,
+  keepspaces=true
+}
+
+\begin{document}
+
+\begin{center}
+  {\LARGE\bfseries Projekt skryptu bashowego}\\[6pt]
+  {\large Laboratorium --- Systemy Operacyjne}\\[12pt]
+  \begin{tabular}{ll}
+    \textbf{Autor:}         & Filip Zdrojewski \\
+    \textbf{Nazwa skryptu:} & \texttt{backuper.sh} \\
+    \textbf{Data:}          & maj 2026 \\
+  \end{tabular}
+\end{center}
+
+\vspace{6pt}\hrule\vspace{8pt}
+
+% ============================================================
+\section{Opis funkcjonalnosci}
+
+Skrypt \texttt{backuper.sh} realizuje automatyczne, szyfrowane kopie zapasowe
+wybranych katalogow uzytkownika z mozliwoscia wysylki na zdalny serwer przez SSH.
+Skrypt umozliwia tworzenie kopii, przegladanie listy archiwow oraz przywracanie
+danych z wybranej wersji.
+
+\subsection*{Glowne funkcje:}
+\begin{itemize}[leftmargin=1.5em, itemsep=1pt, topsep=2pt]
+  \item Tworzenie skompresowanych archiwow \texttt{tar.gz} wskazanych katalogow.
+  \item Szyfrowanie archiwum kluczem symetrycznym AES-256 przy uzyciu \texttt{gpg}.
+  \item Wysylka zaszyfrowanego archiwum na serwer zewnetrzny przez \texttt{scp}/\texttt{rsync}.
+  \item Automatyczna rotacja kopii --- przechowywanie ostatnich \textit{N} wersji (konfigurowalne).
+  \item Zapis logu operacji (data, katalog, rozmiar, status) do pliku dziennika.
+  \item Przywracanie danych z wybranej kopii zapasowej.
+  \item Interaktywny wybor kopii do przywrocenia przy uzyciu \texttt{dialog}.
+\end{itemize}
+
+% ============================================================
+\section{Opis dzialania}
+
+\subsection{Interfejs uzytkownika}
+
+Skrypt obslugiwany jest z linii polecen z opcjami przetwarzanymi przez \texttt{getopts}.
+Operacje wymagajace wyboru (przywracanie) korzystaja z interfejsu \texttt{dialog}.
+
+\begin{lstlisting}
+Uzycie: backuper.sh [OPCJE]
+
+  -b            wykonaj kopie zapasowa (backup)
+  -r            przywroc dane z wybranej kopii (tryb dialog)
+  -l            wyswietl liste dostepnych kopii na serwerze
+  -d KATALOG    katalog zrodlowy do backupu (mozna wielokrotnie)
+  -o KATALOG    katalog docelowy przywracania (domyslnie: ~/przywrocone)
+  -n N          liczba przechowywanych kopii (domyslnie z pliku .rc)
+  -v            wersja i autor
+  -h            krotka pomoc
+\end{lstlisting}
+
+\subsection{Plik konfiguracyjny \texttt{backuper.rc}}
+
+Dane konfiguracyjne przechowywane sa w pliku \texttt{\char126/.backuper.rc}:
+
+\begin{lstlisting}
+BACKUP_DIRS="/home/user/dokumenty /home/user/projekty"
+REMOTE_HOST="backup@192.168.1.100"
+REMOTE_DIR="/backups/filip"
+KEEP_LAST=7
+GPG_PASS_FILE="~/.backup_pass"
+LOG_FILE="~/.backuper.log"
+\end{lstlisting}
+
+\subsection{Przebieg operacji backup}
+
+\begin{enumerate}[leftmargin=1.5em, itemsep=1pt, topsep=2pt]
+  \item Odczyt konfiguracji z pliku \texttt{.rc}.
+  \item Utworzenie archiwum \texttt{tar.gz} w \texttt{/tmp} (dane tymczasowe usuwane przez \texttt{trap}).
+  \item Zaszyfrowanie: \texttt{gpg --symmetric --cipher-algo AES256}.
+  \item Wysylka pliku \texttt{.tar.gz.gpg} na serwer przez \texttt{scp}.
+  \item Rotacja --- usuniecie nadmiarowych kopii przez \texttt{ssh} + \texttt{find}.
+  \item Zapis wpisu do logu i czyszczenie \texttt{/tmp}.
+\end{enumerate}
+
+\subsection{Przebieg operacji przywracania}
+
+\begin{enumerate}[leftmargin=1.5em, itemsep=1pt, topsep=2pt]
+  \item Pobranie listy kopii z serwera (\texttt{ssh} + \texttt{ls}).
+  \item Wyswietlenie listy w interfejsie \texttt{dialog --menu}.
+  \item Pobranie wybranego archiwum przez \texttt{scp} do \texttt{/tmp}.
+  \item Odszyfrowanie: \texttt{gpg --decrypt}.
+  \item Rozpakowanie do katalogu docelowego (\texttt{tar -xzf}).
+  \item Usuniecie plikow tymczasowych z \texttt{/tmp}.
+\end{enumerate}
+
+% ============================================================
+\section{Narzedzia i technologie}
+
+\begin{center}
+\begin{tabular}{>{\ttfamily}lp{9cm}}
+  \toprule
+  \normalfont\textbf{Narzedzie} & \textbf{Zastosowanie} \\
+  \midrule
+  tar       & Tworzenie i rozpakowywanie archiwow skompresowanych \\
+  gpg       & Szyfrowanie i deszyfrowanie symetryczne AES-256 \\
+  scp       & Transfer plikow na zdalny serwer przez SSH \\
+  ssh       & Zdalne zarzadzanie kopiami (rotacja, listowanie) \\
+  find      & Wyszukiwanie i usuwanie nadmiarowych kopii \\
+  dialog    & Interaktywny wybor kopii do przywrocenia \\
+  getopts   & Obsluga opcji linii polecen \\
+  trap      & Czyszczenie plikow tymczasowych przy wyjsciu \\
+  \bottomrule
+\end{tabular}
+\end{center}
+
+% ============================================================
+\section{Wymagania}
+
+\begin{itemize}[leftmargin=1.5em, itemsep=1pt, topsep=2pt]
+  \item System operacyjny: Linux (bash $\geq$ 4.0)
+  \item Pakiety: \texttt{gpg}, \texttt{dialog}, \texttt{openssh-client}, \texttt{tar}
+  \item Dostep SSH do serwera zewnetrznego (klucz lub haslo)
+  \item Skonfigurowany plik \texttt{\char126/.backuper.rc}
+\end{itemize}
+
+\end{document}
