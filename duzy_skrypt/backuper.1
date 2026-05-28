@@ -1,0 +1,174 @@
+.\" Strona podrecznika dla skryptu backuper.sh
+.\" Jezyk: polski
+.\" Kodowanie: UTF-8
+.TH BACKUPER 1 "maj 2026" "wersja 1.0" "Podrecznik uzytkownika"
+.
+.SH NAZWA
+backuper.sh \- szyfrowane kopie zapasowe z wysylka na serwer SSH
+.
+.SH SKLADNIA
+.B backuper.sh
+[\fIOPCJE\fR]
+.
+.SH OPIS
+Skrypt
+.B backuper.sh
+tworzy szyfrowane kopie zapasowe wskazanych katalogow, wysyla je na zdalny
+serwer przez SSH oraz umozliwia przywracanie danych z wybranej kopii.
+Archiwum jest kompresowane narzedziem
+.BR tar (1)
+i szyfrowane symetrycznie algorytmem AES\-256 przy uzyciu
+.BR gpg (1).
+Transfer na serwer zewnetrzny odbywa sie przez
+.BR scp (1).
+.PP
+Dane tymczasowe zapisywane sa w katalogu
+.I /tmp
+i automatycznie usuwane po zakonczeniu dzialania skryptu (rowniez
+przy przerwaniu przez uzytkownika \- mechanizm
+.BR trap ).
+.PP
+Dane konfiguracyjne skryptu przechowywane sa w pliku
+.IR ~/.backuper.rc .
+Jezeli plik nie istnieje, skrypt wyswietla komunikat bledu i konczy dzialanie.
+.
+.SH OPCJE
+.TP
+.B \-b
+Wykonaj kopie zapasowa (backup). Archiwizuje katalogi podane w pliku
+konfiguracyjnym lub opcja
+.BR \-d .
+Po zakonczeniu wykonuje rotacje starych kopii na serwerze.
+.TP
+.BI \-d " KATALOG"
+Dodaj
+.I KATALOG
+do listy katalogow objętych kopia zapasowa. Opcje mozna podac
+wielokrotnie, np.:
+.BR "\-d ~/dokumenty \-d ~/projekty" .
+Nadpisuje wartosc
+.I BACKUP_DIRS
+z pliku
+.IR .rc .
+.TP
+.B \-r
+Przywroc dane z wybranej kopii zapasowej. Uruchamia interaktywne menu
+.BR dialog (1),
+w ktorym uzytkownik wybiera kopie z listy pobranej z serwera.
+Wybrana kopia jest pobierana, odszyfrowywana i rozpakowywana do katalogu
+docelowego.
+.TP
+.BI \-o " KATALOG"
+Ustaw katalog docelowy dla operacji przywracania. Domyslnie:
+.IR ~/przywrocone .
+.TP
+.B \-l
+Wyswietl liste dostepnych kopii zapasowych na serwerze zdalnym wraz
+z ich rozmiarami i datami.
+.TP
+.BI \-n " N"
+Okresl liczbe kopii zapasowych przechowywanych na serwerze. Starsze kopie
+sa automatycznie usuwane podczas rotacji. Domyslna wartosc pochodzi z pola
+.I KEEP_LAST
+w pliku
+.IR .rc .
+.TP
+.B \-v
+Wyswietl wersje skryptu i dane autora, nastepnie zakoncz.
+.TP
+.B \-h
+Wyswietl krotka pomoc i zakoncz.
+.
+.SH PLIKI
+.TP
+.I ~/.backuper.rc
+Glowny plik konfiguracyjny skryptu. Musi istniec przed pierwszym uruchomieniem.
+Zawiera nastepujace zmienne:
+.RS
+.TP
+.B BACKUP_DIRS
+Lista katalogow do backupu oddzielona spacjami.
+.TP
+.B REMOTE_HOST
+Adres serwera zdalnego w formacie
+.IR uzytkownik@host .
+.TP
+.B REMOTE_DIR
+Sciezka do katalogu na serwerze, gdzie przechowywane sa kopie.
+.TP
+.B KEEP_LAST
+Liczba ostatnich kopii do zachowania (rotacja).
+.TP
+.B GPG_PASS_FILE
+Sciezka do pliku zawierajacego haslo szyfrowania GPG (jeden wiersz).
+.TP
+.B LOG_FILE
+Sciezka do pliku dziennika operacji.
+.RE
+.TP
+.I ~/.backuper.log
+Plik dziennika. Kazdy wpis zawiera date, poziom (INFO/WARN/ERROR) i opis.
+.TP
+.I /tmp/backuper_PID/
+Katalog tymczasowy tworzony podczas kazdego uruchomienia. Usuwany automatycznie.
+.
+.SH SZYFROWANIE
+Kopie szyfrowane sa algorytmem
+.B AES\-256
+(Advanced Encryption Standard, klucz 256\-bitow) w trybie symetrycznym
+(\fIgpg \-\-symmetric\fR). Haslo odczytywane jest z pliku wskazanego przez
+.I GPG_PASS_FILE
+w konfiguracji.
+.
+.SH PRZYKLADY
+.TP
+Wykonaj kopie zapasowa z ustawieniami z pliku .rc:
+.B backuper.sh \-b
+.TP
+Wykonaj kopie katalogu /home/user/dokumenty, zachowaj 5 ostatnich kopii:
+.B backuper.sh \-b \-d /home/user/dokumenty \-n 5
+.TP
+Wyswietl dostepne kopie zapasowe na serwerze:
+.B backuper.sh \-l
+.TP
+Przywroc dane interaktywnie (menu dialog):
+.B backuper.sh \-r
+.TP
+Przywroc dane do konkretnego katalogu:
+.B backuper.sh \-r \-o /mnt/przywrocone
+.
+.SH WYMAGANIA
+.TP
+Wymagane pakiety:
+.BR gpg (1),
+.BR tar (1),
+.BR scp (1),
+.BR ssh (1),
+.BR dialog (1)
+.TP
+Wymagana konfiguracja:
+Plik
+.I ~/.backuper.rc
+z poprawnymi danymi serwera SSH i sciezkami katalogow.
+.
+.SH DIAGNOSTYKA
+Skrypt zwraca nastepujace kody wyjscia:
+.TP
+.B 0
+Operacja zakonczyla sie pomyslnie.
+.TP
+.B 1
+Wystapil blad (brak konfiguracji, blad szyfrowania, problem z polaczeniem SSH).
+.
+.SH AUTOR
+Filip Zdrojewski
+.br
+Laboratorium \- Systemy Operacyjne, 2026
+.
+.SH ZOBACZ TAKZE
+.BR tar (1),
+.BR gpg (1),
+.BR scp (1),
+.BR ssh (1),
+.BR dialog (1),
+.BR cron (8)
